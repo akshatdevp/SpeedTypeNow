@@ -6,7 +6,10 @@ use yew::prelude::*;
 // use log::info;
 use wasm_bindgen::JsCast;
 // use yew::web_sys::HtmlTextAreaElement;
+//
 fn main() {
+    wasm_logger::init(wasm_logger::Config::default());
+    
     yew::Renderer::<App>::new().render();
 }
 
@@ -23,10 +26,19 @@ fn TextArea(text : &LongText) -> Html {
     
 }
 
+fn get_current_time() -> f64 {
+         let date = js_sys::Date::new_0();
+         date.get_time()
+    }
+
+fn time_difference(old_time : &f64 , new_time : &f64 ) -> f64 { 
+    return new_time - old_time;
+}
+
 /// checks word against typed word.
 fn validate(typed_word : &str, actual_word : &str) -> WordState {
-    info!("{:?}",typed_word);
-    info!("{:?}",actual_word);
+    // info!("{:?}",typed_word);
+    // info!("{:?}",actual_word);
     if typed_word == actual_word {
         return WordState::COMPLETE;
     }
@@ -43,7 +55,7 @@ fn get_typed_word_state(e : KeyboardEvent, current_word : String) -> WordState {
     let maybe_input = target.and_then(|t| t.dyn_into::<HtmlInputElement>().ok());
     match maybe_input {
         Some(input) => {
-            // let current_word = get_current_word_from_state();
+           
             return validate(&input.value(), &current_word);
         }
         None => {
@@ -52,17 +64,15 @@ fn get_typed_word_state(e : KeyboardEvent, current_word : String) -> WordState {
     }
 }
 
-fn get_current_word_from_state() -> String{
-    String::from("some_word") //TODO
-}
 
 
 #[function_component(App)]
 fn app() -> Html {
+
+    info!("refreshing app!");
     let long_text = LongText::new(String::from( "easy" ) , String::from ( "Random text here for trial" ) ,String::from("source"));
     let state = use_state(|| MyComponent::new(long_text.clone())); // looks like "or" but is lambda :
     let input_value = "";
-    wasm_logger::init(wasm_logger::Config::default());
 
   let on_key_press: Callback<web_sys::KeyboardEvent> = {
         let state = state.clone();
@@ -71,15 +81,23 @@ fn app() -> Html {
             let current_word = state.words_list.clone().get(state.current_index as usize).unwrap().clone();
             let typed_word = get_typed_word_state(event,current_word);
             if typed_word == WordState::COMPLETE {
+                let time;
+                if state.current_index  + 1 == state.words_list.len() as i32{
+                   time = get_current_time() 
+                }
+                else {
+                    time = state.time.clone()
+                }
                 state.set(
                         MyComponent {
                             words_list: state.words_list.clone(),
                             current_index: (state.current_index+1)%state.words_list.len() as i32,
-                            word_state: WordState::EMPTY, 
-                            text: state.text.clone()
+                            // word_state: WordState::EMPTY, 
+                            text: state.text.clone(),
+                            time : time.clone(),
+                            time_elapsed_in_seconds : time_difference(&time.clone(), &get_current_time().clone())
                         }
                     )
-                // state.set(state_clone);
             }
         })
     };
@@ -92,7 +110,8 @@ fn app() -> Html {
                   body = { state.text.body.clone() }
                   />
         <input onkeyup = {on_key_press} value = {input_value}/> 
-        <h2 id="abc"> {state.words_list.clone().get(state.current_index as usize)} </h2>
+        <h2> {state.words_list.clone().get(state.current_index as usize)} </h2>
+        <h6>  { (state.current_index*60) as f64/state.time_elapsed_in_seconds} </h6>
 
         </div>
     }
@@ -102,9 +121,10 @@ struct MyComponent {
     
     words_list : Vec<String>,
     current_index : i32,
-    word_state : WordState,
-    // current_word : String,
-    text : LongText 
+    // word_state : WordState,
+    text : LongText ,
+    time : f64 ,
+    time_elapsed_in_seconds : f64
 }
 impl MyComponent {
     pub fn new(long_text : LongText) -> Self {
@@ -112,11 +132,16 @@ impl MyComponent {
          MyComponent {
             words_list,
             current_index : 0,
-            word_state :WordState::EMPTY,
-            text : long_text
+            // word_state :WordState::EMPTY,
+            text : long_text,
+            time : get_current_time(),
+            time_elapsed_in_seconds : 0.0
         }
     }
 }
 
 
  
+/*
+ * words per minute = current_index / time_elapsed * 60 
+ */
