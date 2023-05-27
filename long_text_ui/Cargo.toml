@@ -11,3 +11,8 @@ wasm-logger = "0.2.0"
 log = "0.4.6"
 web-sys= "0.3.63"
 wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4.36"
+js-sys = "0.3.63"
+reqwest = { version = "0.11.18", features = ["blocking", "json"] }
+serde = "1.0.163"
+

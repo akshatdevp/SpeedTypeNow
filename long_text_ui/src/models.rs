@@ -1,6 +1,6 @@
 use yew::prelude::*;
-
-#[derive(Properties, PartialEq, Clone)]
+use serde::Deserialize;
+#[derive(Properties, PartialEq, Clone, Debug,Deserialize )]
 pub struct LongText  {
    pub difficulty : String ,
    pub body : String,
@@ -23,4 +23,8 @@ pub enum WordState {
     INCORRECT,
     COMPLETE,
     EMPTY
+}
+
+pub struct LongTextWithId {
+
 }
